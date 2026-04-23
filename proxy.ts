@@ -37,16 +37,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Role-based guard for /admin
-  if (pathname.startsWith("/admin")) {
+  // Role-based routing
+  if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard") || pathname === "/") {
     const { data: userData } = await supabase
       .from("users")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (userData?.role !== "super_admin") {
+    if (pathname.startsWith("/admin") && userData?.role !== "super_admin") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    if ((pathname.startsWith("/dashboard") || pathname === "/") && userData?.role === "super_admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
     }
   }
 
