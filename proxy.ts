@@ -59,9 +59,11 @@ export async function proxy(request: NextRequest) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function redirectToDashboard(request: NextRequest, supabase: any) {
+  const { data: { user } } = await supabase.auth.getUser();
   const { data: userData } = await supabase
     .from("users")
     .select("role")
+    .eq("id", user?.id)
     .single();
   const dest = userData?.role === "super_admin" ? "/admin" : "/dashboard";
   return NextResponse.redirect(new URL(dest, request.url));

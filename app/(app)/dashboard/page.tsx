@@ -9,10 +9,11 @@ export default async function DashboardPage() {
 
   const { data: userData } = await supabase
     .from("users")
-    .select("tenant_id")
+    .select("tenant_id, role")
     .eq("id", user.id)
     .single();
 
+  if (userData?.role === "super_admin") redirect("/admin");
   if (!userData?.tenant_id) redirect("/settings");
 
   const { data: threads } = await supabase
