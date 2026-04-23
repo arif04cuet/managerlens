@@ -17,9 +17,9 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
     const hash = window.location.hash;
     if (hash) {
       const params = new URLSearchParams(hash.slice(1));
@@ -42,7 +42,6 @@ export default function SignupPage() {
         setSessionReady(true);
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -51,6 +50,7 @@ export default function SignupPage() {
     if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
     setLoading(true);
     setError("");
+    const supabase = createClient();
     const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) { setError(updateError.message); setLoading(false); return; }
     router.push("/dashboard");
