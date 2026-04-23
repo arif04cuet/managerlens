@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Building2, CheckCircle, AlertCircle, Mail, Settings } from "lucide-react";
+import { UserPlus, Building2, CheckCircle, AlertCircle, Mail, Settings, LogOut } from "lucide-react";
+import { createClient } from "@/lib/supabase/browser";
 import {
   Table,
   TableBody,
@@ -29,6 +31,12 @@ export default function AdminClient({ tenants: initial }: { tenants: Tenant[] })
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const router = useRouter();
+
+  async function handleLogout() {
+    await createClient().auth.signOut();
+    router.push("/login");
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -63,9 +71,15 @@ export default function AdminClient({ tenants: initial }: { tenants: Tenant[] })
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-xl font-semibold text-slate-900">ManagerLens</h1>
-          <p className="text-sm text-slate-500">Super Admin</p>
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">ManagerLens</h1>
+            <p className="text-sm text-slate-500">Super Admin</p>
+          </div>
+          <Button variant="ghost" size="sm" className="gap-2 text-slate-600" onClick={handleLogout}>
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </Button>
         </div>
       </header>
 

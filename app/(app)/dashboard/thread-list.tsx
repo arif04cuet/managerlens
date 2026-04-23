@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Settings, X, ChevronRight, CheckCheck } from "lucide-react";
+import { Settings, X, ChevronRight, CheckCheck, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -140,12 +140,21 @@ export default function ThreadList({
             <h1 className="text-xl font-semibold text-slate-900">ManagerLens</h1>
             <p className="text-sm text-slate-500">Email thread tracking</p>
           </div>
-          <Link href="/settings">
-            <Button variant="ghost" size="sm" className="text-slate-600 gap-2">
-              <Settings className="w-4 h-4" />
-              Settings
+          <div className="flex items-center gap-1">
+            <Link href="/settings">
+              <Button variant="ghost" size="sm" className="text-slate-600 gap-2">
+                <Settings className="w-4 h-4" />
+                Settings
+              </Button>
+            </Link>
+            <Button variant="ghost" size="sm" className="text-slate-600 gap-2" onClick={async () => {
+              await createClient().auth.signOut();
+              router.push("/login");
+            }}>
+              <LogOut className="w-4 h-4" />
+              Sign out
             </Button>
-          </Link>
+          </div>
         </div>
       </header>
 
