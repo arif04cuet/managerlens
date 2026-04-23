@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ManagerLens
+
+Email thread tracking for managers. Automatically ingests emails from a dedicated tracking inbox, groups them into threads, and surfaces active, stalled, and resolved conversations on a clean dashboard.
+
+## Features
+
+- **Email ingestion** — connects via IMAP, fetches new emails on a cron schedule, deduplicates by message ID
+- **Thread grouping** — normalises subject lines (`Re:`, `Fwd:` stripped) to group replies into the same thread
+- **Stalled detection** — threads with no reply after a configurable number of days are automatically marked Stalled
+- **Dashboard** — filterable list view (All / Active / Stalled / Resolved) with real-time updates
+- **Thread timeline** — full message history with a two-column timeline layout; system events (e.g. resolved) appear as markers
+- **Manual actions** — manager can mark any thread as Resolved or Dismiss it
+- **Multi-tenancy** — each manager has an isolated workspace enforced by Supabase RLS
+- **Credential security** — IMAP app passwords stored encrypted in Supabase Vault, never in plain text
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript |
+| Styling | Tailwind CSS + Shadcn UI |
+| Database | Supabase (PostgreSQL + RLS) |
+| Auth | Supabase Auth (email/password + invite flow) |
+| Secrets | Supabase Vault |
+| Email | IMAP via `imapflow` |
+| Cron | Vercel Cron (`vercel.json`) |
+| Deployment | Vercel |
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone & install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/arif04cuet/managerlens.git
+cd managerlens
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill in `.env.local`:
 
-## Learn More
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+GEMINI_API_KEY=
+CRON_SECRET=        # openssl rand -hex 32
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Supabase setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Run migrations in order from `supabase/migrations/` in the Supabase SQL editor:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. `001_enable_vault.sql`
+2. `002_schema.sql`
+3. `003_rls.sql`
+4. `004_auth_trigger.sql`
+5. `005_vault_wrappers.sql`
+6. `006_last_ingested_at.sql`
+7. `007_add_recipients_to_threads.sql`
+8. `008_add_created_at_to_threads.sql`
+9. `009_threads_replica_identity_full.sql`
 
-## Deploy on Vercel
+In Supabase Auth settings: enable the **Email** provider.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4. Run locally
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). You will be redirected to `/login`.
+
+### 5. Trigger the ingest cron manually
+
+```bash
+curl -X GET http://localhost:3000/api/cron/ingest \
+  -H "Authorization: Bearer <your CRON_SECRET>"
+```
+
+## Key Routes
+
+| Route | Description |
+|---|---|
+| `/login` | Email + password sign-in |
+| `/signup` | Invite landing page — set password |
+| `/admin` | Super admin: provision tenants |
+| `/dashboard` | Manager: thread list with filters |
+| `/dashboard/[id]` | Thread detail + timeline |
+| `/settings` | Manager: configure tracking email & filters |
+| `GET /api/cron/ingest` | Email ingestion (called by Vercel Cron) |
+
+## Deployment
+
+Deploy to Vercel and set the environment variables. The `vercel.json` cron job calls `/api/cron/ingest` every 5 minutes automatically.
+
+```bash
+vercel --prod
+```
